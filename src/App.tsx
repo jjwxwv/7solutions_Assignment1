@@ -5,77 +5,52 @@ import MainList from "./components/MainList";
 import { NewData } from "./types/NewData";
 import { data } from "./data";
 
+const dataType: string[] = Array.from(new Set(data.map((value) => value.type)));
+const newData: NewData[] = data.map((value) => {
+  return {
+    type: value.type,
+    name: value.name,
+    isActive: false,
+    timeOutId: -1,
+  };
+});
 function App() {
-  const dataType: string[] = Array.from(
-    new Set(data.map((value) => value.type))
-  );
-  const newData: NewData[] = data.map((value) => {
-    return {
-      type: value.type,
-      name: value.name,
-      isActive: false,
-      timeOutId: -1,
-    };
-  });
   const [itemList, setItemList] = useState<NewData[]>(newData);
+
+  function setItemListRefactor(
+    textContent: string,
+    isActive: boolean,
+    id: number = -1
+  ) {
+    const item = itemList.find((value) => value.name === textContent)!;
+    const setItem = { ...item, isActive, timeOutId: id };
+    setItemList((prev) => {
+      const filteredOutList = prev.filter((value) => value.name !== item.name);
+      return [...filteredOutList, setItem];
+    });
+  }
 
   function handleDeleteMainItem(
     e: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) {
-    //refactor callback function
-    const filteredOutCallback = (value: NewData, itemToFilter: string) =>
-      value.name !== itemToFilter;
-    //refactor callback function
-    const findCallback = (value: NewData, itemToFind: string) =>
-      value.name === itemToFind;
-    //get clicked item
-    const clickedItem = itemList.find((value) =>
-      findCallback(value, e.currentTarget.textContent!)
-    )!;
-    //refactor callback function
-    const setItemListCallback = (prevState: NewData[], setItem: NewData) => {
-      const filteredOutList = prevState.filter((value) =>
-        filteredOutCallback(value, clickedItem.name)
-      );
-      return [...filteredOutList, setItem];
-    };
-    //main feature
+    const clickedItem = e.currentTarget.textContent!;
     const id = setTimeout(() => {
-      const itemToRollBack = itemList.find((value) =>
-        findCallback(value, clickedItem.name)
-      )!;
-      const setInActivedItem = {
-        ...itemToRollBack,
-        isActive: false,
-        timeoutId: -1,
-      };
-      setItemList((prev) => setItemListCallback(prev, setInActivedItem));
+      //move filteredlist to mainlist after 5 seconds
+      setItemListRefactor(clickedItem, false);
     }, 5000);
-    const setActivedItem = { ...clickedItem, isActive: true, timeOutId: id };
-    setItemList((prev) => setItemListCallback(prev, setActivedItem));
+    //move mainlist to filteredlist when we click on main list
+    setItemListRefactor(clickedItem, true, id);
   }
 
   function handleDeleteFilteredItem(
     e: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) {
-    //get clicked item
-    const clickedItem = itemList.find(
-      (value) => value.name === e.currentTarget.textContent!
-    )!;
-    //main feature
-    const setInActivedItem = {
-      ...clickedItem,
-      isActive: false,
-      timeoutId: -1,
-    };
-    setItemList((prev) => {
-      const filteredOutList = prev.filter(
-        (value) => value.name !== clickedItem.name
-      );
-      return [...filteredOutList, setInActivedItem];
-    });
+    const clickedItem = e.currentTarget.textContent!;
+    const item = itemList.find((value) => value.name === clickedItem)!;
+    //move filteredlist to mainlist when that item is clicked
+    setItemListRefactor(clickedItem, false);
     //cancel setTimeoutId when click on filteredList
-    clearTimeout(clickedItem.timeOutId);
+    clearTimeout(item.timeOutId);
   }
 
   return (
